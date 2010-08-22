@@ -10,9 +10,7 @@ extern "C" {
 class Source {
 public:
     Source() : fd(-1) {}
-    virtual ~Source() {
-        std::cerr << "Deleting thing with fd=" << fd << std::endl;
-    }
+    virtual ~Source() {}
 
     // Return false when we're closed.
     virtual bool handle(short which);

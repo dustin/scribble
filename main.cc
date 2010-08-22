@@ -13,8 +13,6 @@ int main(int argc, char **argv) {
 
     assert(argc > 1);
 
-    std::cout << "Going..." << std::endl;
-
     struct event_base *ev = event_init();
     assert(ev);
 

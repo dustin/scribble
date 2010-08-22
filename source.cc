@@ -69,7 +69,6 @@ bool Source::handle(short which) {
         perror("read");
         // FALLTHROUGH
     case 0:
-        std::cerr << "Closing " << fd << std::endl;
         if (event_del(&ev) != 0) {
             std::cerr << "Failed to remove an event." << std::endl;
             abort();
@@ -100,8 +99,6 @@ void FileDescriptorSource::initialize(const char *spec) {
 
 bool TcpSource::handle(short which) {
     assert(which == EV_READ);
-
-    std::cout << "Accepting a connection." << std::endl;
 
     struct sockaddr_in addr;
     socklen_t addrlen;
