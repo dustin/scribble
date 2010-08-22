@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <cassert>
 
 #include <string.h>
@@ -120,12 +121,32 @@ void TcpSource::initialize(const char *spec) {
         exit(EX_OSERR);
     }
 
-    int port = 6789;
+    std::string sspec(spec);
+    size_t colon = sspec.find(":");
+    if (colon == std::string::npos) {
+        std::cerr << "tcp spec format error (wants tcp://i.p.ad.dr:port)" << std::endl;
+        exit(EX_USAGE);
+    }
+
+    std::string hosts = sspec.substr(0, colon);
+    std::string ports = sspec.substr(colon + 1);
+
+    int port = atoi(ports.c_str());
 
     struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    switch (inet_pton(AF_INET, hosts.c_str(), &addr.sin_addr)) {
+    case 0:
+        std::cerr << "Invalid format for host addr." << std::endl;
+        exit(EX_USAGE);
+        break;
+    case -1:
+        perror("inet_pton");
+        exit(EX_OSERR);
+    }
 
     int reuse = 1;
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
