@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <sysexits.h>
 
 #include <event.h>
@@ -114,13 +115,6 @@ bool TcpSource::handle(short which) {
 }
 
 void TcpSource::initialize(const char *spec) {
-    (void)spec;
-    fd = socket(PF_INET, SOCK_STREAM, 0);
-    if (fd < 0) {
-        perror("socket");
-        exit(EX_OSERR);
-    }
-
     std::string sspec(spec);
     size_t colon = sspec.find(":");
     if (colon == std::string::npos) {
@@ -131,20 +125,19 @@ void TcpSource::initialize(const char *spec) {
     std::string hosts = sspec.substr(0, colon);
     std::string ports = sspec.substr(colon + 1);
 
-    int port = atoi(ports.c_str());
-
-    struct sockaddr_in addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
-
-    switch (inet_pton(AF_INET, hosts.c_str(), &addr.sin_addr)) {
-    case 0:
-        std::cerr << "Invalid format for host addr." << std::endl;
+    int error = 0;
+    struct addrinfo hints, *res;
+    hints.ai_family = PF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    if ((error = getaddrinfo(hosts.c_str(), ports.c_str(), &hints, &res)) != 0) {
+        std::cerr << "Failed to set up binding: " << gai_strerror(error) << std::endl;
         exit(EX_USAGE);
-        break;
-    case -1:
-        perror("inet_pton");
+    }
+
+    (void)spec;
+    fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (fd < 0) {
+        perror("socket");
         exit(EX_OSERR);
     }
 
@@ -155,7 +148,7 @@ void TcpSource::initialize(const char *spec) {
         exit(EX_OSERR);
     }
 
-    if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) != 0) {
+    if (bind(fd, res->ai_addr, res->ai_addrlen) != 0) {
         perror("bind");
         exit(EX_OSERR);
     }
@@ -164,4 +157,6 @@ void TcpSource::initialize(const char *spec) {
         perror("listen");
         exit(EX_OSERR);
     }
+
+    freeaddrinfo(res);
 }
