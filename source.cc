@@ -128,6 +128,7 @@ void TcpSource::initialize(const char *spec) {
 
     int error = 0;
     struct addrinfo hints, *res;
+    memset(&hints, 0, sizeof(hints));
     hints.ai_family = PF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     if ((error = getaddrinfo(hosts.c_str(), ports.c_str(), &hints, &res)) != 0) {
