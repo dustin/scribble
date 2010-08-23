@@ -12,12 +12,13 @@
 
 int main(int argc, char **argv) {
 
-    assert(argc > 1);
+    assert(argc > 2);
 
     struct event_base *ev = event_init();
     assert(ev);
 
     Sink sink;
+    sink.addDestination(Destination::mk(&sink, argv[2]));
     (void)Source::mk(&sink, argv[1]);
 
     event_dispatch();
