@@ -8,6 +8,7 @@
 #include <event.h>
 
 #include <source.hh>
+#include <sink.hh>
 
 int main(int argc, char **argv) {
 
@@ -16,8 +17,8 @@ int main(int argc, char **argv) {
     struct event_base *ev = event_init();
     assert(ev);
 
-    Source *src = Source::mk(argv[1]);
-    (void)src;
+    Sink sink;
+    (void)Source::mk(&sink, argv[1]);
 
     event_dispatch();
 

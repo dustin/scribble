@@ -15,6 +15,7 @@
 #include <event.h>
 
 #include <source.hh>
+#include <sink.hh>
 
 extern "C" {
     void src_handler(int fd, short which, void *arg) {
@@ -26,17 +27,17 @@ extern "C" {
      }
 }
 
-Source* Source::mk(const char *spec) {
+Source* Source::mk(Sink *sink, const char *spec) {
     Source *rv(NULL);
     const char *downSpec(spec);
     if (strncmp(spec, "file://", 7) == 0) {
         downSpec = spec + 7;
-        rv = new FileSource;
+        rv = new FileSource(sink);
     } else if (strncmp(spec, "tcp://", 6) == 0) {
         downSpec = spec + 6;
-        rv = new TcpSource;
+        rv = new TcpSource(sink);
     } else if (strcmp(spec, "-") == 0) {
-        rv = new FileDescriptorSource;
+        rv = new FileDescriptorSource(sink);
         rv->fd = STDIN_FILENO;
     } else {
         std::cerr << "Unhandled src type:  " << spec << std::endl;
@@ -51,8 +52,8 @@ Source* Source::mk(const char *spec) {
     return rv;
 }
 
-Source* Source::mk(int srcfd) {
-    FileDescriptorSource *rv = new FileDescriptorSource;
+Source* Source::mk(Sink *sink, int srcfd) {
+    FileDescriptorSource *rv = new FileDescriptorSource(sink);
     rv->fd = srcfd;
 
     event_set(&rv->ev, rv->fd, EV_READ|EV_PERSIST, src_handler, rv);
@@ -81,7 +82,7 @@ bool Source::handle(short which) {
         return false;
         break;
     default:
-        write(STDOUT_FILENO, buf, bytesread);
+        sink->receiveData(buf, bytesread);
     }
 
     return true;
@@ -110,7 +111,7 @@ bool TcpSource::handle(short which) {
         exit(EX_OSERR);
     }
 
-    (void)Source::mk(newsock);
+    (void)Source::mk(sink, newsock);
     return true;
 }
 
