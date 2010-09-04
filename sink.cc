@@ -4,12 +4,13 @@
 #include <cassert>
 
 #include <stdio.h>
+#include <string.h>
 #include <sysexits.h>
 
 #include <sink.hh>
 
 extern "C" {
-    void dest_handler(int fd, short which, void *arg) {
+    static void dest_handler(int fd, short which, void *arg) {
         (void)fd;
         Destination *dest = static_cast<Destination *>(arg);
         if (!dest->handle(which)) {
